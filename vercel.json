@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "name": "swipebite",
+  "builds": [
+    {
+      "src": "webapp/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/webapp/$1"
+    }
+  ]
+}
