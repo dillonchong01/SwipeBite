@@ -11,227 +11,222 @@ class FoodCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: food.budget == 'high'
-              ? [
-                  const Color(0xFFffd89b),
-                  const Color(0xFFff8c42),
-                  const Color(0xFF19547b),
-                ]
-              : [
-                  const Color(0xFF8e2de2),
-                  const Color(0xFF6a11cb),
-                  const Color(0xFF4a00e0),
-                ],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: (food.budget == 'high' 
-                ? const Color(0xFFff8c42) 
-                : const Color(0xFF8e2de2)).withOpacity(0.4),
-            blurRadius: 30,
-            spreadRadius: 2,
-            offset: const Offset(0, 12),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Base width ~420 works well for phones → web
+        final scale = (constraints.maxWidth / 420).clamp(0.75, 1.0);
+
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: food.budget == 'high'
+                  ? const [
+                      Color(0xFFffd89b),
+                      Color(0xFFff8c42),
+                      Color(0xFF19547b),
+                    ]
+                  : const [
+                      Color(0xFF8e2de2),
+                      Color(0xFF6a11cb),
+                      Color(0xFF4a00e0),
+                    ],
+            ),
+            borderRadius: BorderRadius.circular(24 * scale),
+            boxShadow: [
+              BoxShadow(
+                color: (food.budget == 'high'
+                        ? const Color(0xFFff8c42)
+                        : const Color(0xFF8e2de2))
+                    .withOpacity(0.4),
+                blurRadius: 30 * scale,
+                spreadRadius: 2 * scale,
+                offset: Offset(0, 12 * scale),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          // Subtle pattern overlay
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                gradient: LinearGradient(
-                  begin: Alignment.topRight,
-                  end: Alignment.bottomLeft,
-                  colors: [
-                    Colors.white.withOpacity(0.1),
-                    Colors.transparent,
-                    Colors.black.withOpacity(0.2),
-                  ],
+          child: Stack(
+            children: [
+              // Subtle pattern overlay
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24 * scale),
+                    gradient: LinearGradient(
+                      begin: Alignment.topRight,
+                      end: Alignment.bottomLeft,
+                      colors: [
+                        Colors.white.withOpacity(0.1),
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.2),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          // Decorative circles
-          Positioned(
-            top: -30,
-            right: -30,
-            child: Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.08),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: -50,
-            left: -50,
-            child: Container(
-              width: 150,
-              height: 150,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.black.withOpacity(0.1),
-              ),
-            ),
-          ),
-          // Main content
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Food emoji with glow
-                  Container(
-                    padding: const EdgeInsets.all(20),
+
+              // ⭐ High-budget star
+              if (food.budget == 'high')
+                Positioned(
+                  top: 16 * scale,
+                  right: 16 * scale,
+                  child: Container(
+                    padding: EdgeInsets.all(8 * scale),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.15),
+                      color: Colors.black.withOpacity(0.25),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.white.withOpacity(0.3),
-                          blurRadius: 20,
-                          spreadRadius: 2,
+                          color: Colors.amber.withOpacity(0.6),
+                          blurRadius: 12 * scale,
+                          spreadRadius: 1 * scale,
                         ),
                       ],
                     ),
-                    child: Text(
-                      _extractEmoji(food.name),
-                      style: const TextStyle(fontSize: 80),
+                    child: Icon(
+                      Icons.star,
+                      color: Colors.amber,
+                      size: 28 * scale,
                     ),
                   ),
-                  const SizedBox(height: 32),
-                  
-                  // Food name with backdrop
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.25),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.2),
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Text(
-                      food.name.replaceAll(RegExp(r'[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]', unicode: true), '').trim(),
-                      style: const TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        letterSpacing: 0.5,
-                        shadows: [
-                          Shadow(
-                            offset: Offset(0, 2),
-                            blurRadius: 4,
-                            color: Colors.black38,
-                          ),
-                        ],
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
+                ),
+
+              // Decorative circles
+              Positioned(
+                top: -30 * scale,
+                right: -30 * scale,
+                child: Container(
+                  width: 120 * scale,
+                  height: 120 * scale,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.08),
                   ),
-                  const SizedBox(height: 24),
-                  
-                  // Location with icon
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.25),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.location_on,
-                          size: 20,
-                          color: Colors.white.withOpacity(0.9),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          food.locationName,
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.white.withOpacity(0.95),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
+                ),
+              ),
+              Positioned(
+                bottom: -50 * scale,
+                left: -50 * scale,
+                child: Container(
+                  width: 150 * scale,
+                  height: 150 * scale,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.black.withOpacity(0.1),
                   ),
-                  const SizedBox(height: 16),
-                  
-                  // Budget indicator with enhanced styling
-                  if (food.budget == 'high')
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.amber.withOpacity(0.8),
-                            Colors.yellow.withOpacity(0.6),
+                ),
+              ),
+
+              // Main content
+              Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32 * scale),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Food emoji
+                      Container(
+                        padding: EdgeInsets.all(20 * scale),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withOpacity(0.15),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.white.withOpacity(0.3),
+                              blurRadius: 20 * scale,
+                              spreadRadius: 2 * scale,
+                            ),
                           ],
                         ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.amber.withOpacity(0.4),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            _extractEmoji(food.name),
+                            style: TextStyle(fontSize: 80 * scale),
                           ),
-                        ],
+                        ),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.star,
-                            size: 18,
-                            color: Colors.white,
+                      SizedBox(height: 32 * scale),
+
+                      // Food name
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 20 * scale,
+                          vertical: 12 * scale,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.25),
+                          borderRadius: BorderRadius.circular(16 * scale),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.2),
+                            width: 1.5 * scale,
                           ),
-                          const SizedBox(width: 6),
-                          const Text(
-                            'High Budget',
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              shadows: [
-                                Shadow(
-                                  offset: Offset(0, 1),
-                                  blurRadius: 2,
-                                  color: Colors.black26,
+                        ),
+                        child: Text(
+                          food.name
+                              .replaceAll(
+                                RegExp(
+                                  r'[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]',
+                                  unicode: true,
                                 ),
-                              ],
-                            ),
+                                '',
+                              )
+                              .trim(),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 32 * scale,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            letterSpacing: 0.5,
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                ],
+                      SizedBox(height: 24 * scale),
+
+                      // Location
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 20 * scale,
+                          vertical: 10 * scale,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.25),
+                          borderRadius: BorderRadius.circular(20 * scale),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.location_on,
+                              size: 20 * scale,
+                              color: Colors.white.withOpacity(0.9),
+                            ),
+                            SizedBox(width: 8 * scale),
+                            Text(
+                              food.locationName,
+                              style: TextStyle(
+                                fontSize: 18 * scale,
+                                color: Colors.white.withOpacity(0.95),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -240,7 +235,6 @@ class FoodCard extends StatelessWidget {
       r'[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]',
       unicode: true,
     );
-    final match = emojiRegex.firstMatch(text);
-    return match?.group(0) ?? '🍽️';
+    return emojiRegex.firstMatch(text)?.group(0) ?? '🍽️';
   }
 }
