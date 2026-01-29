@@ -15,6 +15,7 @@ class FirestoreService {
         .collection('users')
         .doc(userId)
         .collection('locations')
+        .orderBy('name')
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => LocationModel.fromFirestore(doc.id, doc.data()))

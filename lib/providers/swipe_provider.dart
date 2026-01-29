@@ -36,18 +36,15 @@ class SwipeProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Weighted random selection
+  // Weighted random selection - now generates 2 cards for smooth transitions
   void _refreshDeck() {
     if (_allFoods.isEmpty) {
       _swipeDeck = [];
       return;
     }
 
-    // Create weighted list based on toggles
-    List<FoodChoice> candidates = _allFoods.where((food) {
-      if (_isRichMode && food.budget == 'low') return false;
-      return true;
-    }).toList();
+    // Generate next card
+    List<FoodChoice> candidates = List.from(_allFoods);
 
     if (candidates.isEmpty) {
       _swipeDeck = [];
@@ -58,10 +55,16 @@ class SwipeProvider extends ChangeNotifier {
     List<double> weights = candidates.map((food) {
       double weight = food.freq.toDouble();
       
-      // Adventurous mode inverts frequency (lower freq = higher probability)
+      // Adventurous mode inverts frequency
       if (_isAdventurousMode) {
         int maxFreq = candidates.map((f) => f.freq).reduce(max);
+        // Inverse: freq 1 gets maxFreq weight, freq maxFreq gets 1 weight
         weight = (maxFreq - food.freq + 1).toDouble();
+      }
+      
+      // Rich mode gives 2x weight to high budget items
+      if (_isRichMode && food.budget == 'high') {
+        weight *= 2.0;
       }
       
       return weight;
@@ -72,28 +75,33 @@ class SwipeProvider extends ChangeNotifier {
     double random = Random().nextDouble() * totalWeight;
     
     double cumulative = 0;
+    FoodChoice? selectedFood;
     for (int i = 0; i < candidates.length; i++) {
       cumulative += weights[i];
       if (random <= cumulative) {
-        _swipeDeck = [candidates[i]];
+        selectedFood = candidates[i];
         break;
       }
     }
     
     // Fallback
-    if (_swipeDeck.isEmpty) {
-      _swipeDeck = [candidates[Random().nextInt(candidates.length)]];
+    if (selectedFood == null) {
+      selectedFood = candidates[Random().nextInt(candidates.length)];
     }
+    
+    _swipeDeck = [selectedFood];
   }
 
   // Toggle modes
   void toggleRichMode() {
     _isRichMode = !_isRichMode;
+    _refreshDeck();
     notifyListeners();
   }
 
   void toggleAdventurousMode() {
     _isAdventurousMode = !_isAdventurousMode;
+    _refreshDeck();
     notifyListeners();
   }
 

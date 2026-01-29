@@ -243,30 +243,214 @@ class _SwipeScreenState extends State<SwipeScreen> {
       );
     }
 
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: CardSwiper(
-        controller: _cardController,
-        cardsCount: 1,
-        numberOfCardsDisplayed: 1,
-        threshold: 25,
-        maxAngle: 18,
-        scale: 0.95,
-        duration: const Duration(milliseconds: 420),
+    return Column(
+      children: [
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: CardSwiper(
+              controller: _cardController,
+              cardsCount: 1,
+              numberOfCardsDisplayed: 1,
+              threshold: 25,
+              maxAngle: 18,
+              scale: 0.95,
+              duration: const Duration(milliseconds: 420),
+              allowedSwipeDirection: const AllowedSwipeDirection.only(
+                left: true,
+                right: true,
+                up: false,
+                down: false,
+              ),
+              onSwipe: (previousIndex, currentIndex, direction) {
+                if (direction == CardSwiperDirection.right) {
+                  _showLockInConfirmation(userId, swipeProvider);
+                } else if (direction == CardSwiperDirection.left) {
+                  swipeProvider.swipeLeft();
+                }
+                return true;
+              },
+              cardBuilder: (context, index, percentThresholdX, percentThresholdY) {
+                return FoodCard(food: swipeProvider.swipeDeck.first);
+              },
+            ),
+          ),
+        ),
+        // Permanent swipe direction indicators
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Left - Skip
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.15),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.red.withOpacity(0.3),
+                        width: 2,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.close,
+                      color: Colors.red.withOpacity(0.8),
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Swipe Left',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.6),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'Skip',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              // Right - Lock In
+              Row(
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'Swipe Right',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.6),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'Lock In',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 12),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.15),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.green.withOpacity(0.3),
+                        width: 2,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.check,
+                      color: Colors.green.withOpacity(0.8),
+                      size: 24,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 
-        onSwipe: (previousIndex, currentIndex, direction) {
-          if (direction == CardSwiperDirection.right) {
-            _confettiController.play();
-            swipeProvider.swipeRight(userId);
-          } else if (direction == CardSwiperDirection.left) {
-            swipeProvider.swipeLeft();
-          }
-          return true;
-        },
-
-        cardBuilder: (context, index, percentThresholdX, percentThresholdY) {
-          return FoodCard(food: swipeProvider.swipeDeck.first);
-        },
+  void _showLockInConfirmation(String userId, SwipeProvider swipeProvider) {
+    final foodName = swipeProvider.swipeDeck.first.name;
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF16213e),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green, size: 32),
+            SizedBox(width: 12),
+            Text(
+              'Lock in this choice?',
+              style: TextStyle(color: Colors.white),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'You\'re about to lock in:',
+              style: TextStyle(color: Colors.white.withOpacity(0.7)),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              foodName,
+              style: const TextStyle(
+                color: Color(0xFFe91e63),
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'This will be your final decision!',
+              style: TextStyle(color: Colors.white.withOpacity(0.8)),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              swipeProvider.swipeLeft();
+            },
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Colors.white70),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              _confettiController.play();
+              await swipeProvider.swipeRight(userId);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFe91e63),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              'Confirm',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
       ),
     );
   }

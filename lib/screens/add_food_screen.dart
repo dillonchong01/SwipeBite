@@ -16,7 +16,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
   final TextEditingController _foodNameController = TextEditingController();
   final TextEditingController _newLocationController = TextEditingController();
   
-  final Set<String> _selectedLocationIds = {};
+  String? _selectedLocationId;
   String _selectedBudget = 'low';
 
   @override
@@ -78,7 +78,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
 
             // Location Selector
             const Text(
-              'Select Locations',
+              'Select Location',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -89,76 +89,105 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                 // Determine if data is still loading
                 final isLoading = snapshot.connectionState == ConnectionState.waiting;
 
-                return Stack(
-                  children: [
-                    // Main content (locations + add new location)
-                    Column(
-                      children: [
-                        if (snapshot.hasData)
-                          ...snapshot.data!.map((location) => CheckboxListTile(
-                                title: Text(location.name),
-                                value: _selectedLocationIds.contains(location.id),
-                                onChanged: (checked) {
-                                  setState(() {
-                                    if (checked == true) {
-                                      _selectedLocationIds.add(location.id);
-                                    } else {
-                                      _selectedLocationIds.remove(location.id);
-                                    }
-                                  });
-                                },
-                                tileColor: const Color(0xFF16213e),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              )),
+                if (isLoading) {
+                  return Container(
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF16213e),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        color: Colors.pinkAccent,
+                      ),
+                    ),
+                  );
+                }
 
-                        // Add New Location Row
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _newLocationController,
-                                decoration: const InputDecoration(
-                                  labelText: 'New Location',
-                                  hintText: 'e.g., Downtown',
-                                  border: OutlineInputBorder(),
-                                  filled: true,
-                                  fillColor: Color(0xFF16213e),
-                                ),
+                final locations = snapshot.data ?? [];
+
+                return Column(
+                  children: [
+                    // Location Dropdown
+                    DropdownButtonHideUnderline(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF16213e),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.white24),
+                        ),
+                        child: DropdownButton<String>(
+                          value: _selectedLocationId,
+                          isExpanded: true,
+                          dropdownColor: const Color(0xFF16213e),
+                          icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white70),
+                          hint: const Text(
+                            'Select location',
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                          items: locations.map((location) {
+                            return DropdownMenuItem<String>(
+                              value: location.id,
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.place, size: 18, color: Colors.white54),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    location.name,
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
+                                ],
                               ),
+                            );
+                          }).toList(),
+                          onChanged: (locationId) {
+                            setState(() {
+                              _selectedLocationId = locationId;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+
+                    // Add New Location Row
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _newLocationController,
+                            decoration: const InputDecoration(
+                              labelText: 'New Location',
+                              hintText: 'e.g., Downtown',
+                              border: OutlineInputBorder(),
+                              filled: true,
+                              fillColor: Color(0xFF16213e),
                             ),
-                            const SizedBox(width: 8),
-                            ElevatedButton(
-                              onPressed: () async {
-                                if (_newLocationController.text.isNotEmpty) {
-                                  await _firestoreService.addLocation(
-                                    userId,
-                                    _newLocationController.text,
-                                  );
-                                  _newLocationController.clear();
-                                }
-                              },
-                              child: const Text('Add'),
-                            ),
-                          ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: () async {
+                            if (_newLocationController.text.isNotEmpty) {
+                              await _firestoreService.addLocation(
+                                userId,
+                                _newLocationController.text,
+                              );
+                              _newLocationController.clear();
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFe91e63),
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                          ),
+                          child: const Text(
+                            'Add',
+                            style: TextStyle(color: Colors.white),
+                          ),
                         ),
                       ],
                     ),
-
-                    // Full-page loader overlay
-                    if (isLoading)
-                      Container(
-                        color: Colors.black54, // semi-transparent overlay
-                        width: double.infinity,
-                        height: double.infinity,
-                        child: const Center(
-                          child: CircularProgressIndicator(
-                            color: Colors.pinkAccent,
-                          ),
-                        ),
-                      ),
                   ],
                 );
               },
@@ -207,7 +236,6 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                 ),
               ),
             ),
-
           ],
         ),
       ),
@@ -244,31 +272,33 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
       return;
     }
 
-    if (_selectedLocationIds.isEmpty) {
+    if (_selectedLocationId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select at least one location')),
+        const SnackBar(content: Text('Please select a location')),
       );
       return;
     }
 
-    // Get location names
+    // Get location name
     final locations = await _firestoreService.getLocations(userId).first;
-    final selectedLocations = locations
-        .where((loc) => _selectedLocationIds.contains(loc.id))
-        .toList();
+    final selectedLocation = locations.firstWhere(
+      (loc) => loc.id == _selectedLocationId,
+    );
 
     await _firestoreService.addFoodChoice(
       userId: userId,
       foodName: _foodNameController.text,
-      locationIds: selectedLocations.map((l) => l.id).toList(),
-      locationNames: selectedLocations.map((l) => l.name).toList(),
+      locationIds: [selectedLocation.id],
+      locationNames: [selectedLocation.name],
       budget: _selectedBudget,
     );
 
     // Clear form
     _foodNameController.clear();
-    _selectedLocationIds.clear();
-    setState(() => _selectedBudget = 'low');
+    setState(() {
+      _selectedLocationId = null;
+      _selectedBudget = 'low';
+    });
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Food choice added! 🎉')),
